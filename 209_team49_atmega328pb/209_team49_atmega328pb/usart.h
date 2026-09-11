@@ -9,18 +9,35 @@
 #define USART_H
 
 #include <avr/io.h>
-#include <math.h>
 #include <string.h>
+#include "config.h"
 
-#define CYCLES_TO_AVERAGE 10
+// ===== POWER DATA STRUCTURE =====
+typedef struct {
+	uint16_t voltage_rms_cV;
+	uint16_t voltage_peak_cV;
+	uint16_t current_rms_mA;
+	uint16_t current_peak_mA;
+	uint16_t real_power_cW;
+} PowerData;
 
-// ===== FUNCTION PROTOTYPES =====
-void usart_int(uint16_t ubrr);
+extern PowerData power_data;
+extern volatile uint8_t power_result_ready;
+
+void compute_constants(void);
+
+void usart_int(void);
 void usart_transmit_byte(char character);
 void usart_transmit_array(char* msg);
 
-// Power processing functions
-void main_processing(void);
-void send_power_data(void);
+void usart_transmit_voltage(uint16_t voltage_cV, char* label);
+void usart_transmit_current(uint16_t current_mA, char* label);
+void usart_transmit_power(uint16_t power_cW, char* label);
 
-#endif // USART_H
+void main_processing(void);
+void process_adc_samples(void);
+void average_and_store(void);
+void send_power_data(void);
+void send_power_data_simple(void);
+
+#endif

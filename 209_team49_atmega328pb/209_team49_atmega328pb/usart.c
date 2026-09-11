@@ -1,34 +1,64 @@
 /*
  * usart.c
  *
- * Created: 9/09/2026 2:47:36 pm
- *  Author: fbrad
+ * Integer-math power processing with runtime-computed constants.
+ *
+ * Units:
+ *   Voltage: cV   (centivolts,  1 cV = 0.01 V)
+ *   Current: mA   (milliamps,   1 mA = 0.001 A)
+ *   Power:   cW   (centiwatts,  1 cW = 0.01 W)
  */
 
 #include <avr/io.h>
 #include "usart.h"
 #include "adc.h"
+#include "config.h"
 
-// ===== STATIC BUFFERS =====
-static float v_rms_buf[CYCLES_TO_AVERAGE];
-static float i_rms_buf[CYCLES_TO_AVERAGE];
-static float p_buf[CYCLES_TO_AVERAGE];
-static uint8_t cycle_count = 0;
+// ===== RUNTIME-COMPUTED CONSTANTS =====
+static int32_t A_V;        // voltage multiplier
+static int32_t A_I;        // current multiplier
+static int32_t V_OFFSET;   // voltage bias offset
+static int32_t I_OFFSET;   // current bias offset
 
-// ===== POWER DATA STRUCTURE =====
-typedef struct {
-    float voltage_rms;
-    float current_rms;
-    float real_power;
-    float apparent_power;
-    float reactive_power;
-    float power_factor;
-} PowerData;
+// ===== ACCUMULATORS =====
+static int32_t  v_sq_sum    = 0;
+static int32_t  i_sq_sum    = 0;
+static int32_t  p_sum       = 0;
+static uint16_t v_peak_max  = 0;
+static uint16_t i_peak_max  = 0;
+static uint16_t cycle_count = 0;
 
-static PowerData power_data;
+// ===== POWER DATA =====
+PowerData power_data;
+volatile uint8_t power_result_ready = 0;
 
-// ===== USART FUNCTIONS =====
-void usart_int(uint16_t ubrr) {
+// ===== COMPUTE CONSTANTS =====
+// Called once at startup. Uses float for clarity; runtime cost is negligible.
+void compute_constants(void) {
+    // -- Voltage --
+    // factor_V = (ADC_REF / ADC_MAX) × (Ra+Rb)/Rb × 100    [cV per ADC count]
+    // A_V = factor_V × 2^n
+    float factor_V = (ADC_REF / ADC_MAX) * ((Ra + Rb) / Rb) * 100.0f;
+    A_V = (int32_t)(factor_V * A_SCALE + 0.5f);
+
+    // V_OFFSET = (Ra+Rb)/Rb × 100 × V_DC_BIAS × 2^n
+    float v_off = ((Ra + Rb) / Rb) * 100.0f * V_DC_BIAS;
+    V_OFFSET = (int32_t)(v_off * A_SCALE + 0.5f);
+
+    // -- Current --
+    // factor_I = (ADC_REF / ADC_MAX) × R1/(R2 × Rs) × 1000  [mA per ADC count]
+    // A_I = factor_I × 2^n
+    float factor_I = (ADC_REF / ADC_MAX) * (R1 / (R2 * Rs)) * 1000.0f;
+    A_I = (int32_t)(factor_I * A_SCALE + 0.5f);
+
+    // I_OFFSET = R1/(R2 × Rs) × 1000 × V_DC_BIAS × 2^n
+    float i_off = (R1 / (R2 * Rs)) * 1000.0f * V_DC_BIAS;
+    I_OFFSET = (int32_t)(i_off * A_SCALE + 0.5f);
+}
+
+// ===== USART =====
+void usart_int(void) {
+    uint16_t ubrr = (uint16_t)BAUD_PRESCALE;
     UBRR0H = (uint8_t)(ubrr >> 8);
     UBRR0L = (uint8_t)(ubrr);
     UCSR0B = (1 << TXEN0);
@@ -46,101 +76,141 @@ void usart_transmit_array(char* msg) {
     }
 }
 
-// ===== CONVERT ADC TO VOLTAGE =====
-void convert_adc_to_voltage(void) {
-    for (uint8_t i = 0; i < SAMPLES_PER_CYCLE; i++) {
-        float v_meas = (float)v_samples[i] * (ADC_REF / ADC_MAX);
-        float i_meas = (float)i_samples[i] * (ADC_REF / ADC_MAX);
-        
-        v_samples[i] = (uint16_t)((v_meas - V_DC_BIAS) * V_SCALE);
-        i_samples[i] = (uint16_t)((i_meas - V_DC_BIAS) * I_SCALE);
+// ===== INTEGER SQUARE ROOT =====
+static uint16_t isqrt32(uint32_t n) {
+    if (n == 0) return 0;
+    uint32_t x = n;
+    uint32_t y = (x + 1) / 2;
+    while (y < x) {
+        x = y;
+        y = (x + n / x) / 2;
     }
+    return (uint16_t)x;
 }
 
-// ===== CALCULATE RMS AND POWER =====
-void calculate_rms_and_power_average(void) {
-    float v_rms = 0, i_rms = 0, p_sum = 0;
-    
-    for (uint8_t i = 0; i < SAMPLES_PER_CYCLE; i++) {
-        // Convert stored values back to float
-        float v = (float)v_samples[i];
-        float i = (float)i_samples[i];
-        
-        v_rms += v * v;
-        i_rms += i * i;
-        p_sum += v * i;
+// ===== CONVERT + ACCUMULATE =====
+void process_adc_samples(void) {
+    uint16_t v_peak_cycle = 0;
+    uint16_t i_peak_cycle = 0;
+
+    for (uint8_t i = 0; i < SAMPLES_PER_CHANNEL; i++) {
+        // ADC count ? centivolts
+        int16_t v_cV = (int16_t)(((int32_t)v_samples[i] * A_V - V_OFFSET) >> A_SHIFT);
+
+        // ADC count ? milliamps
+        int16_t i_mA = (int16_t)(((int32_t)i_samples[i] * A_I - I_OFFSET) >> A_SHIFT);
+
+        // Absolute peak tracking
+        uint16_t av = (v_cV >= 0) ? (uint16_t)v_cV : (uint16_t)(-v_cV);
+        uint16_t ai = (i_mA >= 0) ? (uint16_t)i_mA : (uint16_t)(-i_mA);
+        if (av > v_peak_cycle) v_peak_cycle = av;
+        if (ai > i_peak_cycle) i_peak_cycle = ai;
+
+        // Accumulate
+        v_sq_sum += (int32_t)v_cV * v_cV;
+        i_sq_sum += (int32_t)i_mA * i_mA;
+        p_sum    += (int32_t)v_cV * i_mA;
     }
-    
-    v_rms = sqrt(v_rms / SAMPLES_PER_CYCLE);
-    i_rms = sqrt(i_rms / SAMPLES_PER_CYCLE);
-    float p_avg = p_sum / SAMPLES_PER_CYCLE;
-    
-    v_rms_buf[cycle_count] = v_rms;
-    i_rms_buf[cycle_count] = i_rms;
-    p_buf[cycle_count] = p_avg;
+
+    if (v_peak_cycle > v_peak_max) v_peak_max = v_peak_cycle;
+    if (i_peak_cycle > i_peak_max) i_peak_max = i_peak_cycle;
+
     cycle_count++;
 }
 
 // ===== AVERAGE AND STORE =====
 void average_and_store(void) {
     if (cycle_count < CYCLES_TO_AVERAGE) return;
-    
-    float v_avg = 0, i_avg = 0, p_avg = 0;
-    
-    for (uint8_t i = 0; i < CYCLES_TO_AVERAGE; i++) {
-        v_avg += v_rms_buf[i];
-        i_avg += i_rms_buf[i];
-        p_avg += p_buf[i];
-    }
-    
-    v_avg /= CYCLES_TO_AVERAGE;
-    i_avg /= CYCLES_TO_AVERAGE;
-    p_avg /= CYCLES_TO_AVERAGE;
-    
-    float s = v_avg * i_avg;
-    float q = 0;
-    float pf = 0;
-    
-    if (s > p_avg) {
-        q = sqrt(s * s - p_avg * p_avg);
-    }
-    
-    if (s > 0) {
-        pf = p_avg / s;
-    }
-    
-    power_data.voltage_rms = v_avg;
-    power_data.current_rms = i_avg;
-    power_data.real_power = p_avg;
-    power_data.apparent_power = s;
-    power_data.reactive_power = q;
-    power_data.power_factor = pf;
-    
+
+    uint16_t n = (uint16_t)(SAMPLES_PER_CHANNEL * CYCLES_TO_AVERAGE);
+
+    uint16_t v_rms_cV = isqrt32((uint32_t)v_sq_sum / n);
+    uint16_t i_rms_mA = isqrt32((uint32_t)i_sq_sum / n);
+    uint16_t p_cW     = (uint16_t)(((uint32_t)p_sum / n) / 1000);
+
+    power_data.voltage_rms_cV  = v_rms_cV;
+    power_data.voltage_peak_cV = v_peak_max;
+    power_data.current_rms_mA  = i_rms_mA;
+    power_data.current_peak_mA = i_peak_max;
+    power_data.real_power_cW   = p_cW;
+
+    v_sq_sum = 0;
+    i_sq_sum = 0;
+    p_sum = 0;
+    v_peak_max = 0;
+    i_peak_max = 0;
     cycle_count = 0;
+
+    power_result_ready = 1;
 }
 
 // ===== MAIN PROCESSING =====
 void main_processing(void) {
     if (samples_ready) {
-        convert_adc_to_voltage();
-        calculate_rms_and_power_average();
-        average_and_store();
-        send_power_data();
+        process_adc_samples();
         samples_ready = 0;
+        average_and_store();
     }
 }
 
 // ===== SEND POWER DATA =====
 void send_power_data(void) {
-    char buffer[60];
-    
-    sprintf(buffer, "V:%.2f I:%.3f P:%.2f Q:%.2f S:%.2f PF:%.3f\r\n",
-            power_data.voltage_rms,
-            power_data.current_rms,
-            power_data.real_power,
-            power_data.reactive_power,
-            power_data.apparent_power,
-            power_data.power_factor);
-    
-    usart_transmit_array(buffer);
+    usart_transmit_voltage(power_data.voltage_rms_cV,  "RMS Voltage");
+    usart_transmit_voltage(power_data.voltage_peak_cV, "Peak Voltage");
+    usart_transmit_current(power_data.current_rms_mA,  "RMS Current");
+    usart_transmit_current(power_data.current_peak_mA, "Peak Current");
+    usart_transmit_power  (power_data.real_power_cW,   "Real Power");
+    usart_transmit_array("\r\n");
+}
+
+// ===== SEND POWER DATA SIMPLE=====
+void send_power_data_simple(void) {
+	usart_transmit_voltage(power_data.voltage_rms_cV,  "rV");
+	usart_transmit_voltage(power_data.voltage_peak_cV, "pV");
+	usart_transmit_current(power_data.current_rms_mA,  "rC");
+	usart_transmit_current(power_data.current_peak_mA, "pC");
+	usart_transmit_power  (power_data.real_power_cW,   "rP");
+	usart_transmit_array("\r\n");
+}
+
+// ===== TRANSMIT: XX.XXV =====
+void usart_transmit_voltage(uint16_t voltage_cV, char* label) {
+    usart_transmit_array(label);
+    usart_transmit_array(": ");
+	
+	uint16_t tens = (voltage_cV / 1000) % 10;
+	if (tens != 0) usart_transmit_byte('0' + tens);
+
+    usart_transmit_byte('0' + (voltage_cV / 100) % 10);
+    usart_transmit_byte('.');
+    usart_transmit_byte('0' + (voltage_cV / 10) % 10);
+    usart_transmit_byte('0' + voltage_cV % 10);
+    usart_transmit_byte('V');
+    usart_transmit_array("\r\n");
+}
+
+// ===== TRANSMIT: XXXmA =====
+void usart_transmit_current(uint16_t current_mA, char* label) {
+    usart_transmit_array(label);
+    usart_transmit_array(": ");
+
+    usart_transmit_byte('0' + (current_mA / 100) % 10);
+    usart_transmit_byte('0' + (current_mA / 10) % 10);
+    usart_transmit_byte('0' + current_mA % 10);
+    usart_transmit_array("mA\r\n");
+}
+
+// ===== TRANSMIT: XX.XXW =====
+void usart_transmit_power(uint16_t power_cW, char* label) {
+    usart_transmit_array(label);
+    usart_transmit_array(": ");
+
+    uint16_t tens = (power_cW / 1000) % 10;
+    if (tens != 0) usart_transmit_byte('0' + tens);
+    usart_transmit_byte('0' + (power_cW / 100) % 10);
+    usart_transmit_byte('.');
+    usart_transmit_byte('0' + (power_cW / 10) % 10);
+    usart_transmit_byte('0' + power_cW % 10);
+    usart_transmit_byte('W');
+    usart_transmit_array("\r\n");
 }
