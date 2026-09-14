@@ -14,8 +14,7 @@
 
 // ===== AC SIGNAL =====
 #define AC_FREQ 500
-#define SAMPLES_PER_CHANNEL 19
-#define TOTAL_SAMPLES 38
+#define SAMPLES_PER_CHANNEL 38
 #define SAMPLE_RATE 19000
 
 // ===== TIMER1 =====
@@ -31,7 +30,7 @@
 #define BAUD_PRESCALE 12
 
 // ===== AVERAGING =====
-#define CYCLES_TO_AVERAGE 10
+#define CYCLES_TO_AVERAGE 16
 
 // ===== COMPONENT VALUES =====
 #define Ra 20780.0f
