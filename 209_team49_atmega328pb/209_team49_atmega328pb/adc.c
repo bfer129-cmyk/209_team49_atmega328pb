@@ -53,20 +53,24 @@ void adc_init(void) {
 // ===== ADC INTERRUPT =====
 ISR(ADC_vect) {
     if (adc_channel == 0) {
-        v_samples[sample_index] = ADC;
-        ADMUX |= (1 << MUX0);   // switch to ADC1
-        adc_channel = 1;
+        v_samples[sample_index] = ADC;       
     } else {
         i_samples[sample_index] = ADC;
-        ADMUX &= ~(1 << MUX0);  // switch to ADC0
-        adc_channel = 0;
-
-        sample_index++;
-        if (sample_index >= SAMPLES_PER_CHANNEL) {
-            samples_ready = 1;
-            sample_index = 0;
-        }
     }
+
+	sample_index++;
+	if (sample_index >= SAMPLES_PER_CHANNEL) {
+		sample_index = 0;
+		if (adc_channel == 0)
+		{
+			ADMUX |= (1 << MUX0);   // switch to ADC1
+			adc_channel = 1;
+		} else {
+			ADMUX &= ~(1 << MUX0);  // switch to ADC0
+			adc_channel = 0;
+			samples_ready = 1;
+		}
+	}
 }
 
 // ===== TIMER1 COMPARE MATCH A INTERRUPT =====

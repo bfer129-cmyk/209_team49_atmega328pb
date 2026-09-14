@@ -18,9 +18,9 @@ c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/..
 Allocating common symbols
 Common symbol       size              file
 
-i_samples           0x26              adc.o
+i_samples           0x4c              adc.o
 power_data          0xa               usart.o
-v_samples           0x26              adc.o
+v_samples           0x4c              adc.o
 
 Discarded input sections
 
@@ -270,7 +270,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000      0xbb0
+.text           0x00000000      0xbbc
  *(.vectors)
  .vectors       0x00000000       0xb4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328pb/avr5/crtatmega328pb.o
                 0x00000000                __vector_default
@@ -381,64 +381,64 @@ END GROUP
                 0x00000118       0x2a adc.o
                 0x00000118                adc_init
  .text.__vector_21
-                0x00000142       0x9c adc.o
+                0x00000142       0xa6 adc.o
                 0x00000142                __vector_21
  .text.__vector_11
-                0x000001de       0x2a adc.o
-                0x000001de                __vector_11
- .text.main     0x00000208       0x2a main.o
-                0x00000208                main
- .text.isqrt32  0x00000232       0x84 usart.o
+                0x000001e8       0x2a adc.o
+                0x000001e8                __vector_11
+ .text.main     0x00000212       0x2a main.o
+                0x00000212                main
+ .text.isqrt32  0x0000023c       0x84 usart.o
  .text.compute_constants
-                0x000002b6       0x62 usart.o
-                0x000002b6                compute_constants
+                0x000002c0       0x62 usart.o
+                0x000002c0                compute_constants
  .text.usart_int
-                0x00000318       0x18 usart.o
-                0x00000318                usart_int
+                0x00000322       0x18 usart.o
+                0x00000322                usart_int
  .text.usart_transmit_byte
-                0x00000330        0xe usart.o
-                0x00000330                usart_transmit_byte
+                0x0000033a        0xe usart.o
+                0x0000033a                usart_transmit_byte
  .text.usart_transmit_array
-                0x0000033e       0x3a usart.o
-                0x0000033e                usart_transmit_array
+                0x00000348       0x3a usart.o
+                0x00000348                usart_transmit_array
  .text.process_adc_samples
-                0x00000378      0x21c usart.o
-                0x00000378                process_adc_samples
+                0x00000382      0x21c usart.o
+                0x00000382                process_adc_samples
  .text.average_and_store
-                0x00000594      0x10c usart.o
-                0x00000594                average_and_store
+                0x0000059e      0x10e usart.o
+                0x0000059e                average_and_store
  .text.main_processing
-                0x000006a0       0x16 usart.o
-                0x000006a0                main_processing
+                0x000006ac       0x16 usart.o
+                0x000006ac                main_processing
  .text.usart_transmit_voltage
-                0x000006b6      0x15a usart.o
-                0x000006b6                usart_transmit_voltage
+                0x000006c2      0x15a usart.o
+                0x000006c2                usart_transmit_voltage
  .text.usart_transmit_current
-                0x00000810      0x158 usart.o
-                0x00000810                usart_transmit_current
+                0x0000081c      0x158 usart.o
+                0x0000081c                usart_transmit_current
  .text.usart_transmit_power
-                0x00000968      0x15a usart.o
-                0x00000968                usart_transmit_power
+                0x00000974      0x15a usart.o
+                0x00000974                usart_transmit_power
  .text.send_power_data_simple
-                0x00000ac2       0x52 usart.o
-                0x00000ac2                send_power_data_simple
+                0x00000ace       0x52 usart.o
+                0x00000ace                send_power_data_simple
  .text.libgcc.mul
-                0x00000b14       0x20 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_mulsi3.o)
-                0x00000b14                __mulsi3
+                0x00000b20       0x20 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_mulsi3.o)
+                0x00000b20                __mulsi3
  .text.libgcc.div
-                0x00000b34       0x44 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_udivmodsi4.o)
-                0x00000b34                __udivmodsi4
+                0x00000b40       0x44 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_udivmodsi4.o)
+                0x00000b40                __udivmodsi4
  .text.libgcc.mul
-                0x00000b78       0x1e c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_umulhisi3.o)
-                0x00000b78                __umulhisi3
+                0x00000b84       0x1e c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_umulhisi3.o)
+                0x00000b84                __umulhisi3
  .text.libgcc.mul
-                0x00000b96       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_muluhisi3.o)
-                0x00000b96                __muluhisi3
-                0x00000bac                . = ALIGN (0x2)
+                0x00000ba2       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_muluhisi3.o)
+                0x00000ba2                __muluhisi3
+                0x00000bb8                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00000bac        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
-                0x00000bac                _exit
-                0x00000bac                exit
+ .fini9         0x00000bb8        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
+                0x00000bb8                _exit
+                0x00000bb8                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -457,11 +457,11 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00000bac        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
+ .fini0         0x00000bb8        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
  *(.fini0)
-                0x00000bb0                _etext = .
+                0x00000bbc                _etext = .
 
-.data           0x00800100       0x6c load address 0x00000bb0
+.data           0x00800100       0x6c load address 0x00000bbc
                 0x00800100                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
@@ -478,7 +478,7 @@ END GROUP
                 0x0080016c                _edata = .
                 0x0080016c                PROVIDE (__data_end, .)
 
-.bss            0x0080016c       0x7c
+.bss            0x0080016c       0xc8
                 0x0080016c                PROVIDE (__bss_start, .)
  *(.bss)
  *(.bss*)
@@ -506,20 +506,20 @@ END GROUP
  .bss.A_I       0x0080018a        0x4 usart.o
  .bss.A_V       0x0080018e        0x4 usart.o
  *(COMMON)
- COMMON         0x00800192       0x4c adc.o
+ COMMON         0x00800192       0x98 adc.o
                 0x00800192                i_samples
-                0x008001b8                v_samples
- COMMON         0x008001de        0xa usart.o
-                0x008001de                power_data
-                0x008001e8                PROVIDE (__bss_end, .)
-                0x00000bb0                __data_load_start = LOADADDR (.data)
-                0x00000c1c                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x008001de                v_samples
+ COMMON         0x0080022a        0xa usart.o
+                0x0080022a                power_data
+                0x00800234                PROVIDE (__bss_end, .)
+                0x00000bbc                __data_load_start = LOADADDR (.data)
+                0x00000c28                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x008001e8        0x0
+.noinit         0x00800234        0x0
                 [!provide]                PROVIDE (__noinit_start, .)
  *(.noinit*)
                 [!provide]                PROVIDE (__noinit_end, .)
-                0x008001e8                _end = .
+                0x00800234                _end = .
                 [!provide]                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
@@ -612,12 +612,12 @@ END GROUP
  .debug_abbrev  0x00000935       0xa6 main.o
  .debug_abbrev  0x000009db      0x1ad usart.o
 
-.debug_line     0x00000000      0x85f
+.debug_line     0x00000000      0x865
  *(.debug_line .debug_line.* .debug_line_end)
  .debug_line    0x00000000      0x1a6 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328pb/avr5/crtatmega328pb.o
- .debug_line    0x000001a6      0x167 adc.o
- .debug_line    0x0000030d       0xdf main.o
- .debug_line    0x000003ec      0x473 usart.o
+ .debug_line    0x000001a6      0x16d adc.o
+ .debug_line    0x00000313       0xdf main.o
+ .debug_line    0x000003f2      0x473 usart.o
 
 .debug_frame    0x00000000      0x290
  *(.debug_frame)
@@ -635,10 +635,10 @@ END GROUP
  .debug_str     0x00000567      0x1dc usart.o
                                 0x426 (size before relaxing)
 
-.debug_loc      0x00000000      0xa55
+.debug_loc      0x00000000      0xa56
  *(.debug_loc)
  .debug_loc     0x00000000       0xb9 adc.o
- .debug_loc     0x000000b9      0x99c usart.o
+ .debug_loc     0x000000b9      0x99d usart.o
 
 .debug_macinfo
  *(.debug_macinfo)
