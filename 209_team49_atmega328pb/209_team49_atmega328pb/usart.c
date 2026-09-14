@@ -126,7 +126,7 @@ void average_and_store(void) {
 
     uint16_t v_rms_cV = isqrt32((uint32_t)v_sq_sum / n);
     uint16_t i_rms_mA = isqrt32((uint32_t)i_sq_sum / n);
-    uint16_t p_cW     = (uint16_t)(((uint32_t)p_sum / n) / 1000);
+    uint16_t p_cW     = (uint16_t)(((uint32_t)p_sum / n) / 1000); // remove the 1000 from mA to get cW precision.
 
     power_data.voltage_rms_cV  = v_rms_cV;
     power_data.voltage_peak_cV = v_peak_max;
@@ -189,15 +189,20 @@ void usart_transmit_voltage(uint16_t voltage_cV, char* label) {
     usart_transmit_array("\r\n");
 }
 
-// ===== TRANSMIT: XXXmA =====
+// ===== TRANSMIT: XXXmA or X,XXXmA =====
 void usart_transmit_current(uint16_t current_mA, char* label) {
-    usart_transmit_array(label);
-    usart_transmit_array(": ");
+	usart_transmit_array(label);
+	usart_transmit_array(": ");
 
-    usart_transmit_byte('0' + (current_mA / 100) % 10);
-    usart_transmit_byte('0' + (current_mA / 10) % 10);
-    usart_transmit_byte('0' + current_mA % 10);
-    usart_transmit_array("mA\r\n");
+	if (current_mA >= 1000) {
+		usart_transmit_byte('0' + (current_mA / 1000) % 10);
+		usart_transmit_byte(',');
+	}
+
+	usart_transmit_byte('0' + (current_mA / 100) % 10);
+	usart_transmit_byte('0' + (current_mA / 10) % 10);
+	usart_transmit_byte('0' + current_mA % 10);
+	usart_transmit_array("mA\r\n");
 }
 
 // ===== TRANSMIT: XX.XXW =====

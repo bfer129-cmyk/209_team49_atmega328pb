@@ -24,7 +24,7 @@
 // ===== ADC =====
 #define ADC_REF 5.0f
 #define ADC_MAX 1023.0f
-#define V_DC_BIAS 2.0625f
+#define V_DC_BIAS 2.1f
 
 // ===== USART =====
 #define BAUD_RATE 9600
@@ -36,8 +36,8 @@
 // ===== COMPONENT VALUES =====
 #define Ra 20780.0f
 #define Rb 1000.0f
-#define R1 3300.0f
-#define R2 8200.0f
+#define R1 1000.0f
+#define R2 2500.0f
 #define Rs 0.5f
 
 // ===== FIXED-POINT SHIFT =====
