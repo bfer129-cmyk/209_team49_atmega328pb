@@ -12,9 +12,12 @@
 #include "adc.h"
 
 int main(void) {
-	compute_constants();  
 	usart_int();
 	adc_init();
+	while(bias_collection){
+		//wait;
+		}
+	compute_constants();  
 
 	usart_transmit_array("Power Monitor Started\r\n");
 

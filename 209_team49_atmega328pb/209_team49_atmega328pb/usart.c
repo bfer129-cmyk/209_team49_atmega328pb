@@ -35,6 +35,9 @@ volatile uint8_t power_result_ready = 0;
 // ===== COMPUTE CONSTANTS =====
 // Called once at startup. Uses float for clarity; runtime cost is negligible.
 void compute_constants(void) {
+	// --V_BIAS--
+	float V_DC_BIAS = ((float)bias_raw * ADC_REF) / ADC_MAX;
+	
     // -- Voltage --
     // factor_V = (ADC_REF / ADC_MAX) × (Ra+Rb)/Rb × 100    [cV per ADC count]
     // A_V = factor_V × 2^n
@@ -61,6 +64,7 @@ void usart_int(void) {
     uint16_t ubrr = (uint16_t)BAUD_PRESCALE;
     UBRR0H = (uint8_t)(ubrr >> 8);
     UBRR0L = (uint8_t)(ubrr);
+	UCSR0A = (1 << U2X0);                    // ? U2X mode (double speed)
     UCSR0B = (1 << TXEN0);
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 }
@@ -126,7 +130,7 @@ void average_and_store(void) {
 
     uint16_t v_rms_cV = isqrt32((uint32_t)v_sq_sum / n);
     uint16_t i_rms_mA = isqrt32((uint32_t)i_sq_sum / n);
-    uint16_t p_cW     = (uint16_t)(((uint32_t)p_sum / n) / 1000); // remove the 1000 from mA to get cW precision.
+    uint16_t p_cW     = (uint16_t)(((uint32_t)p_sum / n) / 1000);
 
     power_data.voltage_rms_cV  = v_rms_cV;
     power_data.voltage_peak_cV = v_peak_max;
@@ -146,11 +150,12 @@ void average_and_store(void) {
 
 // ===== MAIN PROCESSING =====
 void main_processing(void) {
-    if (samples_ready) {
-        process_adc_samples();
-        samples_ready = 0;
-        average_and_store();
-    }
+	if (samples_ready) {
+		PORTB ^= (1 << PB4);  // toggle LED every cycle
+		process_adc_samples();
+		samples_ready = 0;
+		average_and_store();
+	}
 }
 
 // ===== SEND POWER DATA =====
@@ -189,20 +194,15 @@ void usart_transmit_voltage(uint16_t voltage_cV, char* label) {
     usart_transmit_array("\r\n");
 }
 
-// ===== TRANSMIT: XXXmA or X,XXXmA =====
+// ===== TRANSMIT: XXXmA =====
 void usart_transmit_current(uint16_t current_mA, char* label) {
-	usart_transmit_array(label);
-	usart_transmit_array(": ");
+    usart_transmit_array(label);
+    usart_transmit_array(": ");
 
-	if (current_mA >= 1000) {
-		usart_transmit_byte('0' + (current_mA / 1000) % 10);
-		usart_transmit_byte(',');
-	}
-
-	usart_transmit_byte('0' + (current_mA / 100) % 10);
-	usart_transmit_byte('0' + (current_mA / 10) % 10);
-	usart_transmit_byte('0' + current_mA % 10);
-	usart_transmit_array("mA\r\n");
+    usart_transmit_byte('0' + (current_mA / 100) % 10);
+    usart_transmit_byte('0' + (current_mA / 10) % 10);
+    usart_transmit_byte('0' + current_mA % 10);
+    usart_transmit_array("mA\r\n");
 }
 
 // ===== TRANSMIT: XX.XXW =====

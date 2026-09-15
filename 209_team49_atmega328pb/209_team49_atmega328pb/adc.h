@@ -15,6 +15,8 @@
 extern volatile uint16_t v_samples[SAMPLES_PER_CHANNEL];
 extern volatile uint16_t i_samples[SAMPLES_PER_CHANNEL];
 extern volatile uint8_t samples_ready;
+extern volatile uint8_t bias_collection;
+extern volatile uint16_t bias_raw;
 
 void adc_init(void);
 void timer1_init(void);

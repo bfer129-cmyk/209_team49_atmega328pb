@@ -24,7 +24,6 @@
 // ===== ADC =====
 #define ADC_REF 5.0f
 #define ADC_MAX 1023.0f
-#define V_DC_BIAS 2.1f
 
 // ===== USART =====
 #define BAUD_RATE 9600

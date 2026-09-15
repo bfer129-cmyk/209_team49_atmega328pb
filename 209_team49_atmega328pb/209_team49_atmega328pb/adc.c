@@ -12,6 +12,8 @@
 volatile uint16_t v_samples[SAMPLES_PER_CHANNEL];
 volatile uint16_t i_samples[SAMPLES_PER_CHANNEL];
 volatile uint8_t samples_ready = 0;
+volatile uint8_t bias_collection = 1;
+volatile uint16_t bias_raw = 430;
 
 static volatile uint8_t sample_index = 0;
 static volatile uint8_t adc_channel = 0;
@@ -30,10 +32,9 @@ void adc_init(void) {
     // AREF (external 5V on AREF pin) ? REFS1=0, REFS0=0
     ADMUX &= ~((1 << REFS1) | (1 << REFS0));
 
-    // Start on ADC0 (voltage)
-    ADMUX &= ~((1 << MUX3) | (1 << MUX2) |
-               (1 << MUX1) | (1 << MUX0));
-
+    ADMUX &= ~((1 << MUX3) | (1 << MUX2) | (1 << MUX1) | (1 << MUX0));
+    ADMUX |= (1 << MUX1);   // MUX1 = 1 ? ADC2
+	
     // Prescaler = 8 (250 kHz ADC clock)
     ADCSRA = (1 << ADEN) |
              (0 << ADPS2) |
@@ -52,6 +53,17 @@ void adc_init(void) {
 
 // ===== ADC INTERRUPT =====
 ISR(ADC_vect) {
+	if (bias_collection)
+	{
+		bias_raw = ADC;
+		bias_collection = 0;
+		ADMUX &= ~((1 << MUX3) | (1 << MUX2) |
+		(1 << MUX1) | (1 << MUX0)); //ADC0 Voltage
+		return;
+	}
+	if (samples_ready)
+	{ return;
+	}
     if (adc_channel == 0) {
         v_samples[sample_index] = ADC;       
     } else {
