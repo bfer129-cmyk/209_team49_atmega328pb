@@ -64,7 +64,6 @@ void usart_int(void) {
     uint16_t ubrr = (uint16_t)BAUD_PRESCALE;
     UBRR0H = (uint8_t)(ubrr >> 8);
     UBRR0L = (uint8_t)(ubrr);
-	UCSR0A = (1 << U2X0);                    // ? U2X mode (double speed)
     UCSR0B = (1 << TXEN0);
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 }
@@ -194,15 +193,21 @@ void usart_transmit_voltage(uint16_t voltage_cV, char* label) {
     usart_transmit_array("\r\n");
 }
 
-// ===== TRANSMIT: XXXmA =====
+// ===== TRANSMIT: XXXmA or X,XXXmA =====
 void usart_transmit_current(uint16_t current_mA, char* label) {
-    usart_transmit_array(label);
-    usart_transmit_array(": ");
+	usart_transmit_array(label);
+	usart_transmit_array(": ");
 
-    usart_transmit_byte('0' + (current_mA / 100) % 10);
-    usart_transmit_byte('0' + (current_mA / 10) % 10);
-    usart_transmit_byte('0' + current_mA % 10);
-    usart_transmit_array("mA\r\n");
+	// Thousands digit + comma only when >= 1000
+	if (current_mA >= 1000) {
+		usart_transmit_byte('0' + (current_mA / 1000) % 10);
+		usart_transmit_byte(',');
+	}
+
+	usart_transmit_byte('0' + (current_mA / 100) % 10);
+	usart_transmit_byte('0' + (current_mA / 10) % 10);
+	usart_transmit_byte('0' + current_mA % 10);
+	usart_transmit_array("mA\r\n");
 }
 
 // ===== TRANSMIT: XX.XXW =====

@@ -44,4 +44,7 @@
 #define A_SHIFT 17
 #define A_SCALE (1UL << A_SHIFT)
 
+// ===== ZERO-CROSSING =====
+#define VZC_PIN PD2
+
 #endif
