@@ -14,11 +14,11 @@
 
 // ===== AC SIGNAL =====
 #define AC_FREQ 500
-#define SAMPLES_PER_CHANNEL 38
+#define SAMPLES_PER_CHANNEL 19
 #define SAMPLE_RATE 19000
 
 // ===== TIMER1 =====
-#define OCR1A_VALUE 104
+#define OCR1A_VALUE 209
 
 // ===== ADC =====
 #define ADC_REF 5.0f
@@ -39,7 +39,6 @@
 #define Rs 0.5f
 
 // ===== FIXED-POINT SHIFT =====
-// n = 17 chosen so 1023 × (factor × 2^n) < 2^31 for the voltage channel
 #define A_SHIFT 17
 #define A_SCALE (1UL << A_SHIFT)
 

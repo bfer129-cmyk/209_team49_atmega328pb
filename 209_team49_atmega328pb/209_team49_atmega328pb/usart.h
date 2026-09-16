@@ -37,7 +37,6 @@ void usart_transmit_power(uint16_t power_cW, char* label);
 void main_processing(void);
 void process_adc_samples(void);
 void average_and_store(void);
-void send_power_data(void);
 void send_power_data_simple(void);
 
 #endif

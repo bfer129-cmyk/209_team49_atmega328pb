@@ -15,10 +15,10 @@
 #include "config.h"
 
 // ===== RUNTIME-COMPUTED CONSTANTS =====
-static int32_t A_V;        // voltage multiplier
-static int32_t A_I;        // current multiplier
-static int32_t V_OFFSET;   // voltage bias offset
-static int32_t I_OFFSET;   // current bias offset
+static int32_t A_V;
+static int32_t A_I;
+static int32_t V_OFFSET;
+static int32_t I_OFFSET;
 
 // ===== ACCUMULATORS =====
 static int32_t  v_sq_sum    = 0;
@@ -33,28 +33,20 @@ PowerData power_data;
 volatile uint8_t power_result_ready = 0;
 
 // ===== COMPUTE CONSTANTS =====
-// Called once at startup. Uses float for clarity; runtime cost is negligible.
 void compute_constants(void) {
-	// --V_BIAS--
-	float V_DC_BIAS = ((float)bias_raw * ADC_REF) / ADC_MAX;
-	
+    float V_DC_BIAS = ((float)bias_raw * ADC_REF) / ADC_MAX;
+
     // -- Voltage --
-    // factor_V = (ADC_REF / ADC_MAX) × (Ra+Rb)/Rb × 100    [cV per ADC count]
-    // A_V = factor_V × 2^n
     float factor_V = (ADC_REF / ADC_MAX) * ((Ra + Rb) / Rb) * 100.0f;
     A_V = (int32_t)(factor_V * A_SCALE + 0.5f);
 
-    // V_OFFSET = (Ra+Rb)/Rb × 100 × V_DC_BIAS × 2^n
     float v_off = ((Ra + Rb) / Rb) * 100.0f * V_DC_BIAS;
     V_OFFSET = (int32_t)(v_off * A_SCALE + 0.5f);
 
     // -- Current --
-    // factor_I = (ADC_REF / ADC_MAX) × R1/(R2 × Rs) × 1000  [mA per ADC count]
-    // A_I = factor_I × 2^n
     float factor_I = (ADC_REF / ADC_MAX) * (R1 / (R2 * Rs)) * 1000.0f;
     A_I = (int32_t)(factor_I * A_SCALE + 0.5f);
 
-    // I_OFFSET = R1/(R2 × Rs) × 1000 × V_DC_BIAS × 2^n
     float i_off = (R1 / (R2 * Rs)) * 1000.0f * V_DC_BIAS;
     I_OFFSET = (int32_t)(i_off * A_SCALE + 0.5f);
 }
@@ -97,19 +89,14 @@ void process_adc_samples(void) {
     uint16_t i_peak_cycle = 0;
 
     for (uint8_t i = 0; i < SAMPLES_PER_CHANNEL; i++) {
-        // ADC count ? centivolts
         int16_t v_cV = (int16_t)(((int32_t)v_samples[i] * A_V - V_OFFSET) >> A_SHIFT);
-
-        // ADC count ? milliamps
         int16_t i_mA = (int16_t)(((int32_t)i_samples[i] * A_I - I_OFFSET) >> A_SHIFT);
 
-        // Absolute peak tracking
         uint16_t av = (v_cV >= 0) ? (uint16_t)v_cV : (uint16_t)(-v_cV);
         uint16_t ai = (i_mA >= 0) ? (uint16_t)i_mA : (uint16_t)(-i_mA);
         if (av > v_peak_cycle) v_peak_cycle = av;
         if (ai > i_peak_cycle) i_peak_cycle = ai;
 
-        // Accumulate
         v_sq_sum += (int32_t)v_cV * v_cV;
         i_sq_sum += (int32_t)i_mA * i_mA;
         p_sum    += (int32_t)v_cV * i_mA;
@@ -149,41 +136,30 @@ void average_and_store(void) {
 
 // ===== MAIN PROCESSING =====
 void main_processing(void) {
-	if (samples_ready) {
-		PORTB ^= (1 << PB4);  // toggle LED every cycle
-		process_adc_samples();
-		samples_ready = 0;
-		average_and_store();
-	}
+    if (samples_ready) {
+        process_adc_samples();
+        samples_ready = 0;
+        average_and_store();
+    }
 }
 
 // ===== SEND POWER DATA =====
-void send_power_data(void) {
-    usart_transmit_voltage(power_data.voltage_rms_cV,  "RMS Voltage");
-    usart_transmit_voltage(power_data.voltage_peak_cV, "Peak Voltage");
-    usart_transmit_current(power_data.current_rms_mA,  "RMS Current");
-    usart_transmit_current(power_data.current_peak_mA, "Peak Current");
-    usart_transmit_power  (power_data.real_power_cW,   "Real Power");
-    usart_transmit_array("\r\n");
-}
-
-// ===== SEND POWER DATA SIMPLE=====
 void send_power_data_simple(void) {
-	usart_transmit_voltage(power_data.voltage_rms_cV,  "rV");
-	usart_transmit_voltage(power_data.voltage_peak_cV, "pV");
-	usart_transmit_current(power_data.current_rms_mA,  "rC");
-	usart_transmit_current(power_data.current_peak_mA, "pC");
-	usart_transmit_power  (power_data.real_power_cW,   "rP");
-	usart_transmit_array("\r\n");
+    usart_transmit_voltage(power_data.voltage_rms_cV,  "rV");
+    usart_transmit_voltage(power_data.voltage_peak_cV, "pV");
+    usart_transmit_current(power_data.current_rms_mA,  "rC");
+    usart_transmit_current(power_data.current_peak_mA, "pC");
+    usart_transmit_power  (power_data.real_power_cW,   "rP");
+    usart_transmit_array("\r\n");
 }
 
 // ===== TRANSMIT: XX.XXV =====
 void usart_transmit_voltage(uint16_t voltage_cV, char* label) {
     usart_transmit_array(label);
     usart_transmit_array(": ");
-	
-	uint16_t tens = (voltage_cV / 1000) % 10;
-	if (tens != 0) usart_transmit_byte('0' + tens);
+
+    uint16_t tens = (voltage_cV / 1000) % 10;
+    if (tens != 0) usart_transmit_byte('0' + tens);
 
     usart_transmit_byte('0' + (voltage_cV / 100) % 10);
     usart_transmit_byte('.');
@@ -195,19 +171,18 @@ void usart_transmit_voltage(uint16_t voltage_cV, char* label) {
 
 // ===== TRANSMIT: XXXmA or X,XXXmA =====
 void usart_transmit_current(uint16_t current_mA, char* label) {
-	usart_transmit_array(label);
-	usart_transmit_array(": ");
+    usart_transmit_array(label);
+    usart_transmit_array(": ");
 
-	// Thousands digit + comma only when >= 1000
-	if (current_mA >= 1000) {
-		usart_transmit_byte('0' + (current_mA / 1000) % 10);
-		usart_transmit_byte(',');
-	}
+    if (current_mA >= 1000) {
+        usart_transmit_byte('0' + (current_mA / 1000) % 10);
+        usart_transmit_byte(',');
+    }
 
-	usart_transmit_byte('0' + (current_mA / 100) % 10);
-	usart_transmit_byte('0' + (current_mA / 10) % 10);
-	usart_transmit_byte('0' + current_mA % 10);
-	usart_transmit_array("mA\r\n");
+    usart_transmit_byte('0' + (current_mA / 100) % 10);
+    usart_transmit_byte('0' + (current_mA / 10) % 10);
+    usart_transmit_byte('0' + current_mA % 10);
+    usart_transmit_array("mA\r\n");
 }
 
 // ===== TRANSMIT: XX.XXW =====

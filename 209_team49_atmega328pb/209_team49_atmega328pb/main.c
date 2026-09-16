@@ -12,23 +12,26 @@
 #include "adc.h"
 
 int main(void) {
-	usart_int();
-	adc_init();
-	while(bias_collection){
-		//wait;
-		}
-	compute_constants();  
+    usart_int();
+    adc_init();
 
-	usart_transmit_array("Power Monitor Started\r\n");
+    // Wait for the bias reading from ADC2 to complete
+    while (bias_collection) {
+        // wait
+    }
 
-	while (1) {
-		main_processing();
+    compute_constants();
 
-		if (power_result_ready) {
-			send_power_data_simple();
-			power_result_ready = 0;
-		}
-	}
+    usart_transmit_array("Power Monitor Started\r\n");
 
-	return 0;
+    while (1) {
+        main_processing();
+
+        if (power_result_ready) {
+            send_power_data_simple();
+            power_result_ready = 0;
+        }
+    }
+
+    return 0;
 }

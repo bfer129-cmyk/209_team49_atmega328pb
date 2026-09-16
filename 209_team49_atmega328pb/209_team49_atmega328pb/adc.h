@@ -20,8 +20,8 @@ extern volatile uint16_t bias_raw;
 
 void adc_init(void);
 void timer1_init(void);
-void zc_init(void);
 void timer1_start(void);
 void timer1_stop(void);
+void zc_init(void);
 
 #endif
