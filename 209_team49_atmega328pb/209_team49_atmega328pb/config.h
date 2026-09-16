@@ -15,7 +15,6 @@
 // ===== AC SIGNAL =====
 #define AC_FREQ 500
 #define SAMPLES_PER_CHANNEL 38
-#define TOTAL_SAMPLES 38
 #define SAMPLE_RATE 19000
 
 // ===== TIMER1 =====

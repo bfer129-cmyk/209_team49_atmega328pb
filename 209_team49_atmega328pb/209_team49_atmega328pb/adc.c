@@ -19,6 +19,8 @@ static volatile uint8_t sample_index = 0;
 static volatile uint8_t adc_channel = 0;
 volatile uint8_t capturing = 0;
 volatile uint8_t first_sample = 1;
+volatile uint16_t timer1_count = 0;
+volatile uint16_t adc_count = 0;
 
 // ===== TIMER1 INITIALIZATION (configures but does not start) =====
 void timer1_init(void) {
@@ -123,6 +125,7 @@ ISR(ADC_vect) {
 // ===== TIMER1 COMPARE MATCH A INTERRUPT =====
 ISR(TIMER1_COMPA_vect) {
     ADCSRA |= (1 << ADSC);
+	timer1_count++;
 }
 
 // ===== INT0 ISR — V-ZC rising edge on PD2 =====
@@ -130,6 +133,7 @@ ISR(INT0_vect) {
 	if (bias_collection) return;
 	if (samples_ready) return;
 	if (capturing) return;  // already capturing
+	adc_count++;
 	capturing = 1;
 	timer1_start();
 }
