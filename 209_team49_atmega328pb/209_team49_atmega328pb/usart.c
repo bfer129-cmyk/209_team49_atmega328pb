@@ -27,6 +27,7 @@ static int32_t  p_sum       = 0;
 static uint16_t v_peak_max  = 0;
 static uint16_t i_peak_max  = 0;
 static uint16_t cycle_count = 0;
+static uint32_t freq_counts_sum = 0;
 
 // ===== POWER DATA =====
 PowerData power_data;
@@ -117,8 +118,17 @@ void average_and_store(void) {
     uint16_t v_rms_cV = isqrt32((uint32_t)v_sq_sum / n);
     uint16_t i_rms_mA = isqrt32((uint32_t)i_sq_sum / n);
     uint16_t p_cW     = (uint16_t)(((uint32_t)p_sum / n) / 1000);
-
-    power_data.voltage_rms_cV  = v_rms_cV;
+	
+	if (freq_ready)
+	{
+		for (uint8_t i=0; i<CYCLES_TO_AVERAGE; i++)
+		{freq_counts_sum+=freq_counts[i];
+		}
+		power_data.average_freq = (uint16_t)((uint32_t)CYCLES_TO_AVERAGE * timer0_freq * 10 / freq_counts_sum);
+		freq_ready = 0;
+		timer0_start();
+	}
+	power_data.voltage_rms_cV  = v_rms_cV;
     power_data.voltage_peak_cV = v_peak_max;
     power_data.current_rms_mA  = i_rms_mA;
     power_data.current_peak_mA = i_peak_max;
@@ -130,6 +140,7 @@ void average_and_store(void) {
     v_peak_max = 0;
     i_peak_max = 0;
     cycle_count = 0;
+	freq_counts_sum = 0;
 
     power_result_ready = 1;
 }
@@ -150,6 +161,7 @@ void send_power_data_simple(void) {
     usart_transmit_current(power_data.current_rms_mA,  "rC");
     usart_transmit_current(power_data.current_peak_mA, "pC");
     usart_transmit_power  (power_data.real_power_cW,   "rP");
+	usart_transmit_frequency(power_data.average_freq,  "fq");
     usart_transmit_array("\r\n");
 }
 
@@ -198,4 +210,17 @@ void usart_transmit_power(uint16_t power_cW, char* label) {
     usart_transmit_byte('0' + power_cW % 10);
     usart_transmit_byte('W');
     usart_transmit_array("\r\n");
+}
+
+// ===== TRANSMIT: XXX.XHz =====
+void usart_transmit_frequency(uint16_t freq_tenthz, char* label) {
+	usart_transmit_array(label);
+	usart_transmit_array(": ");
+
+	usart_transmit_byte('0' + (freq_tenthz / 1000) % 10);
+	usart_transmit_byte('0' + (freq_tenthz / 100) % 10);
+	usart_transmit_byte('0' + (freq_tenthz / 10) % 10);
+	usart_transmit_byte('.');
+	usart_transmit_byte('0' + freq_tenthz % 10);
+	usart_transmit_array("Hz\r\n");
 }

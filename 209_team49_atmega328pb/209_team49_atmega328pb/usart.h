@@ -19,6 +19,7 @@ typedef struct {
 	uint16_t current_rms_mA;
 	uint16_t current_peak_mA;
 	uint16_t real_power_cW;
+	uint16_t average_freq;
 } PowerData;
 
 extern PowerData power_data;
@@ -33,6 +34,7 @@ void usart_transmit_array(char* msg);
 void usart_transmit_voltage(uint16_t voltage_cV, char* label);
 void usart_transmit_current(uint16_t current_mA, char* label);
 void usart_transmit_power(uint16_t power_cW, char* label);
+void usart_transmit_frequency(uint16_t freq_hz, char* label);
 
 void main_processing(void);
 void process_adc_samples(void);

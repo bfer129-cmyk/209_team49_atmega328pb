@@ -10,15 +10,17 @@
 #define CONFIG_H_
 
 // ===== SYSTEM CLOCK =====
-#define F_CPU 2000000UL
+#define F_CPU 16000000UL
 
 // ===== AC SIGNAL =====
-#define AC_FREQ 500
-#define SAMPLES_PER_CHANNEL 19
-#define SAMPLE_RATE 19000
+#define SAMPLES_PER_CHANNEL 33
 
 // ===== TIMER1 =====
-#define OCR1A_VALUE 209
+#define OCR1A_VALUE 14
+
+// ===== TIMER0 =====
+#define timer0_prescaler 64
+#define timer0_freq F_CPU/timer0_prescaler
 
 // ===== ADC =====
 #define ADC_REF 5.0f
@@ -26,7 +28,7 @@
 
 // ===== USART =====
 #define BAUD_RATE 9600
-#define BAUD_PRESCALE 12
+#define BAUD_PRESCALE 103
 
 // ===== AVERAGING =====
 #define CYCLES_TO_AVERAGE 10

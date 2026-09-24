@@ -5,7 +5,6 @@
  * Author : fbrad
  */
 
-#define F_CPU 2000000UL
 
 #include <avr/io.h>
 #include "usart.h"
