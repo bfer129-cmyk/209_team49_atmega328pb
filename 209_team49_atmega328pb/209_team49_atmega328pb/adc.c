@@ -26,7 +26,8 @@ static volatile uint8_t first_sample = 1;
 volatile uint16_t freq_counts[CYCLES_TO_AVERAGE];   // raw Timer0 counts
 volatile uint8_t  freq_index = 0;
 volatile uint8_t  freq_ready = 0;
-uint8_t timer0_overflow_count = 0;
+volatile uint8_t timer0_overflow_count = 0;
+volatile uint8_t first_sample_freq = 1;
 
 // ===== TIMER1 INITIALIZATION =====
 void timer1_init(void) {
@@ -156,15 +157,25 @@ ISR(INT0_vect) {
 	// ===== Frequency: read Timer0 =====
 	if (!freq_ready)
 	{
-		freq_counts[freq_index] = TCNT0+256*timer0_overflow_count;
-		timer0_overflow_count=0;
-		freq_index++;
-		if (freq_index >= CYCLES_TO_AVERAGE) {
-			freq_index = 0;
-			freq_ready = 1;
-			timer0_stop();
+		if (first_sample_freq)
+		{
+			first_sample_freq = 0;
+			TCNT0 = 0;
+			timer0_overflow_count = 0;
 		}
-		TCNT0 = 0;               // reset for next cycle
+		else
+		{
+			freq_counts[freq_index] = TCNT0+256*timer0_overflow_count;
+			timer0_overflow_count=0;
+			freq_index++;
+			if (freq_index >= CYCLES_TO_AVERAGE) {
+				freq_index = 0;
+				freq_ready = 1;
+				timer0_stop();
+				first_sample_freq = 1;
+			}
+			TCNT0 = 0;               // reset for next cycle
+		}
 	}
 	
 	

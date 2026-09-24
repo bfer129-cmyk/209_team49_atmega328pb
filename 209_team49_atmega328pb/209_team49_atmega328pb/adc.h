@@ -20,6 +20,7 @@ extern volatile uint16_t bias_raw;
 extern volatile uint16_t freq_counts[CYCLES_TO_AVERAGE];
 extern volatile uint8_t  freq_index;
 extern volatile uint8_t freq_ready;
+extern volatile uint8_t first_sample_freq;
 
 void adc_init(void);
 void timer1_init(void);

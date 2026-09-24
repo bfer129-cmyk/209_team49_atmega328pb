@@ -31,7 +31,7 @@
 #define BAUD_PRESCALE 103
 
 // ===== AVERAGING =====
-#define CYCLES_TO_AVERAGE 10
+#define CYCLES_TO_AVERAGE 50
 
 // ===== COMPONENT VALUES =====
 #define Ra 20780.0f
